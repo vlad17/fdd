@@ -25,30 +25,41 @@ source activate fdd-env
 
 ## Usage
 
-Stdin format is expected to be a list of task names, completion time (hours or days), and success rate. After, we expect a new line and then a blocking graph over the tasks, specified in my custom DAG format. Yes, every input line must begin with a number and a period.
+Stdin format is expected to be
+
+* `tasks` on its own line, followed by a list of task names, completion time (hours or days), and success rate
+* `edges` on its own line, with 
 
 ```
 echo '
+
 tasks
 0. chop onions, 4 days, 95
 1. prepare spices, 2 hours, 80
 2. preheat oven, 1 hour, 90
 3. bake chicken, 6 hours, 30
 4. marinate chicken, 2 days, 80
+5. eat yummy food, 1 hour, 100
+
 edges
-2, 4 -> 3
+2, 4 -> 3 -> 5
+0, 1 -> 5
+
 ' | python -m fdd.main.schedule
+
 # generates
-# [2019-05-04 20:54:34 PDT fdd/log.py:102] read 5 tasks 2 edges
-# [2019-05-04 20:54:34 PDT fdd/log.py:102] found the best perm (1, 2, 4, 0, 3)
-# [2019-05-04 20:54:34 PDT fdd/log.py:102] expected hours saved 102.0
+#
+# [2019-05-04 20:58:05 PDT fdd/log.py:102] read 6 tasks 5 edges
+# [2019-05-04 20:58:05 PDT fdd/log.py:102] found the best perm (1, 2, 4, 3, 0, 5)
+# [2019-05-04 20:58:05 PDT fdd/log.py:102] expected hours saved 97.0
 # 
 # tasks, in execution order:
 #     prepare spices
 #     preheat oven
 #     marinate chicken
-#     chop onions
 #     bake chicken
+#     chop onions
+#     eat yummy food
 ```
 
 The above has one dependency, from preheating the oven to baking the chicken.
@@ -61,7 +72,9 @@ which imply directed edges from each `x*` to each `y*` and from each `y*` to eac
 ## Not Available
 
 #. Sometimes, multiple different tasks are redundant, in that completing any single one is enough to achieve this goal. This doesn't handle that case.
+
 #. There might be uncertainty in your estimates for time and success rate. This isn't handled.
+
 #. Some tasks may not be atomic, but rather have multiple possible failure points, or failure can happen according to a Poisson process. This isn't handled, but can be approximated with a long chain of dependent tasks.
 
 ## Dev info
