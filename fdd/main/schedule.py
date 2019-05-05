@@ -71,6 +71,8 @@ def _main(_argv):
     # for larger problem instances
     #
     # else maybe it's possible to use dynamic programming here
+    #
+    # easy optimization for heavy deps: only generate valid DAG paths
     for perm in itertools.permutations(range(len(names))):
         fails = False
         for x, y in edges:

@@ -28,7 +28,7 @@ source activate fdd-env
 Stdin format is expected to be
 
 * `tasks` on its own line, followed by a list of task names, completion time (hours or days), and success rate
-* `edges` on its own line, with 
+* `edges` on its own line, in my DAG specification order
 
 ```
 echo '
