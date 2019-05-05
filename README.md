@@ -6,13 +6,15 @@ This module, `fdd`, was inspired by Jacob Steinhardt's [Research as an SDP](http
 
 This comes up often when dealing with problems that require multiple creative, high-failure-rate steps to achieve. This module slightly generalizes the first approach Jacob lays out, providing a simple interface to finding the approach with the "maximum expected time saved".
 
-Even at 12 tasks, considering all `12!` permutations of task orders slows even computers down to non-interactive speeds.
+Even at 3 tasks, considering all `3!` permutations is hard manually.
 
 As inputs, we require task names (no commas allowed), completion times, and success rates, as percentages.
 
 As outputs, we provide the order to execute the tasks in, to maximize expected time saved.
 
 As a slight generalization, we provide the ability to add task dependencies. A dependent task's success rate should be given conditioned on the success of all of its parents. We assume we get to find out about a task's success at the end of the task.
+
+This performs a brute force approach, currently.
 
 ## Setup
 
@@ -27,15 +29,26 @@ Stdin format is expected to be a list of task names, completion time (hours or d
 
 ```
 echo '
-1. chop onions, 4 days, 95
-2. prepare spices, 2 hours, 80
-3. preheat oven, 1 hour, 90
-4. bake chicken, 6 hours, 30
-5. marinate chicken, 2 days, 80
-
-3, 5 -> 4' | python -m fdd.main.schedule
+tasks
+0. chop onions, 4 days, 95
+1. prepare spices, 2 hours, 80
+2. preheat oven, 1 hour, 90
+3. bake chicken, 6 hours, 30
+4. marinate chicken, 2 days, 80
+edges
+2, 4 -> 3
+' | python -m fdd.main.schedule
 # generates
+# [2019-05-04 20:54:34 PDT fdd/log.py:102] read 5 tasks 2 edges
+# [2019-05-04 20:54:34 PDT fdd/log.py:102] found the best perm (1, 2, 4, 0, 3)
+# [2019-05-04 20:54:34 PDT fdd/log.py:102] expected hours saved 102.0
 # 
+# tasks, in execution order:
+#     prepare spices
+#     preheat oven
+#     marinate chicken
+#     chop onions
+#     bake chicken
 ```
 
 The above has one dependency, from preheating the oven to baking the chicken.
