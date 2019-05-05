@@ -62,20 +62,26 @@ edges
 #     eat yummy food
 ```
 
-The above has one dependency, from preheating the oven to baking the chicken.
-
 Blocking graph format is any number of lines of the form `x0, ..., xn -> y0, ..., ym -> z0, ..., zl`,
 which imply directed edges from each `x*` to each `y*` and from each `y*` to each `z*`.
 
 ## Ballparks
 
+Jacob also proposes a few useful buckets for probability assignment:
+
+* "I am confident that this can be done and that there are no unforeseen difficulties" (~95%)
+* "I see the basic path to accomplishing this and all the steps seem like they should work" (~65%)
+* "I have the intuition that this should be possible but only have a murky view of the path" (~30%)
+
+Relatedly, consider using Fibonacci numbers for time estimates, e.g., 1, 2, 3, 5, 8, ... hours per task to reflect a constant relative uncertainty in task size.
+
 ## Not Available
 
-#. Sometimes, multiple different tasks are redundant, in that completing any single one is enough to achieve this goal. This doesn't handle that case.
+1. Sometimes, multiple different tasks are redundant, in that completing any single one is enough to achieve this goal. This doesn't handle that case.
 
-#. There might be uncertainty in your estimates for time and success rate. This isn't handled.
+1. There might be uncertainty in your estimates for time and success rate. This isn't handled.
 
-#. Some tasks may not be atomic, but rather have multiple possible failure points, or failure can happen according to a Poisson process. This isn't handled, but can be approximated with a long chain of dependent tasks.
+1. Some tasks may not be atomic, but rather have multiple possible failure points, or failure can happen according to a Poisson process. This isn't handled, but can be approximated with a long chain of dependent tasks.
 
 ## Dev info
 
