@@ -4,6 +4,7 @@ Usage: python schedule.py < input
 See README.md for input format
 """
 
+import networkx as nx
 import numpy as np
 import itertools
 import math
@@ -64,26 +65,28 @@ def _main(_argv):
     # todo dag check
 
     log.info('read {} tasks {} edges', len(names), len(edges))
+
+    G = nx.DiGraph()
+    G.add_nodes_from(range(len(names)))
+    G.add_edges_from(edges)
+
+    if not nx.algorithms.dag.is_directed_acyclic_graph(G):
+        log.info('graph is not acyclic')
+        sys.exit(1)
+
+    G = nx.algorithms.dag.transitive_reduction(G)
+
     best_perm = None
     max_expected_saved = -math.inf
+    log.info('incremental best time saved, results printed below')
 
     # is this problem submodular? maybe that gives an approx solution
     # for larger problem instances
     #
     # else maybe it's possible to use dynamic programming here
-    #
-    # easy optimization for heavy deps: only generate valid DAG paths
-    for perm in itertools.permutations(range(len(names))):
-        fails = False
-        for x, y in edges:
-            # easy N^2 -> N: compute inverse permutation array
-            # of the permutation,
-            # do lookup on edge index
-            if perm.index(x) > perm.index(y):
-                fails = True
-                break
-        if fails:
-            continue
+    for perm in nx.algorithms.dag.all_topological_sorts(G):
+
+        # for similar perms, want to save state and just compute deltas
 
         hours_remaining = np.asarray(hours)[np.asarray(perm)]
         hours_remaining = np.roll(np.cumsum(hours_remaining[::-1]), -1)
@@ -101,6 +104,7 @@ def _main(_argv):
         if expected_saved > max_expected_saved:
             max_expected_saved = expected_saved
             best_perm = perm
+            print('{:8.0f} hrs {}'.format(expected_saved, perm))
 
     log.info('found the best perm {}', best_perm)
     log.info('expected hours saved {}', max_expected_saved)
