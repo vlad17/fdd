@@ -4,6 +4,7 @@ Usage: python schedule.py < input
 See README.md for input format
 """
 
+from itertools import islice
 import networkx as nx
 import numpy as np
 import itertools
@@ -62,8 +63,6 @@ def _main(_argv):
             for x, y in itertools.product(froms, tos):
                 edges.append((int(x), int(y)))
 
-    # todo dag check
-
     log.info('read {} tasks {} edges', len(names), len(edges))
 
     G = nx.DiGraph()
@@ -84,27 +83,52 @@ def _main(_argv):
     # for larger problem instances
     #
     # else maybe it's possible to use dynamic programming here
-    for perm in nx.algorithms.dag.all_topological_sorts(G):
+    #
+    # inner loop optimization:
+    # for similar perms, want to save state and just compute deltas
+    #
+    # input optimization: for nodes who have equal ordering in the
+    # DAG partial order (stricter condition than not-orderable!)
+    # can simply sort them by "density": failure rate * time,
+    # don't need to investigate those permutations further
+    # by collapsing into a single node.
+    relabels = [np.arange(len(names), dtype=int)]
+    inverses = relabels[:]
+    for _ in range(10):
+        orig = np.arange(len(names), dtype=int)
+        np.random.shuffle(orig)
+        inv = np.argsort(orig)
+        relabels.append(orig)
+        inverses.append(inv)
 
-        # for similar perms, want to save state and just compute deltas
+    attempts_per_seed = 100 * 100
 
-        hours_remaining = np.asarray(hours)[np.asarray(perm)]
-        hours_remaining = np.roll(np.cumsum(hours_remaining[::-1]), -1)
-        hours_remaining[-1] = 0
+    for mapping, inverse in zip(relabels, inverses):
+        print('reset')
+        mapping = {i: x for i, x in enumerate(mapping)}
+        H = nx.relabel_nodes(G, mapping)
+        it = nx.algorithms.dag.all_topological_sorts(H)
+        it = islice(it, attempts_per_seed)
+        for perm in it:
+            perm = inverse[perm]
 
-        pfailure = np.asarray(failure_rates)[np.asarray(perm)]
-        psuccess = np.roll(1 - pfailure, 1)
-        psuccess[0] = 1
+            hours_remaining = np.asarray(hours)[np.asarray(perm)]
+            hours_remaining = np.roll(np.cumsum(hours_remaining[::-1]), -1)
+            hours_remaining[-1] = 0
 
-        saved_at_index = pfailure * hours_remaining
-        p_get_to_index = np.cumprod(psuccess)
+            pfailure = np.asarray(failure_rates)[np.asarray(perm)]
+            psuccess = np.roll(1 - pfailure, 1)
+            psuccess[0] = 1
 
-        expected_saved = (p_get_to_index * saved_at_index).sum()
+            saved_at_index = pfailure * hours_remaining
+            p_get_to_index = np.cumprod(psuccess)
 
-        if expected_saved > max_expected_saved:
-            max_expected_saved = expected_saved
-            best_perm = perm
-            print('{:8.0f} hrs {}'.format(expected_saved, perm))
+            expected_saved = (p_get_to_index * saved_at_index).sum()
+
+            if expected_saved > max_expected_saved:
+                max_expected_saved = expected_saved
+                best_perm = perm
+                print('{:8.0f} hrs {}'.format(expected_saved, perm))
 
     log.info('found the best perm {}', best_perm)
     log.info('expected hours saved {}', max_expected_saved)
