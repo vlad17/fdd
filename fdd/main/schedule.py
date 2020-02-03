@@ -104,7 +104,6 @@ def _main(_argv):
     attempts_per_seed = 100 * 100
 
     for mapping, inverse in zip(relabels, inverses):
-        print('reset')
         mapping = {i: x for i, x in enumerate(mapping)}
         H = nx.relabel_nodes(G, mapping)
         it = nx.algorithms.dag.all_topological_sorts(H)
